@@ -1,70 +1,60 @@
 # fuck ive completely forgotten how to use python lmfao??
 # i forgot how to comment lol
 import sqlite3
-import requests
+
+# the connection to the JMDict Japanese dictionary
+conn_dict = sqlite3.connect("./jmdict.db")
+cursor_dict = conn_dict.cursor()
+
+# the connection to the vocabulary database for my kindle lookups
+conn_kindle = sqlite3.connect("./vocab.db")
+cursor_kindle = conn_kindle.cursor()
 
 # where the vocabulary database is located when i plug my kindle in
-vocab_path = "D:/system/vocabulary/vocab.db"
+# add this back in when I get that far :) 
+# vocab_path = "D:/system/vocabulary/vocab.db"
 
-# for when i used the jisho api,,, too slow :)
-# def get_jisho_def(word):
-#     url = f"https://jisho.org/api/v1/search/words?keyword={word}"
-#     response = requests.get(url)
-#     if response.status_code == 200:
-#         #json serialize that hoe!
-#         data = response.json()
-#         if data["data"]:
-#             word_data = data["data"][0]
-#             definitions = []
-#             for sense in word_data["senses"]:
-#                 definitions.extend(sense.get("english_definitions",[]))
 
-#             return definitions
-#         else:
-#             return f"No definitions found for {word}"
-#     else:
-#         return f"Error! {response.status_code}"
 
 #gives a list of definitions for given word
 def kanji_def(word):
-    conn = sqlite3.connect("jmdict.db")
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT entries.kanji, entries.reading, extra_info.pos, entries.meaning,
+    cursor_dict.execute("""
+        SELECT DISTINCT entries.kanji, entries.reading, extra_info.pos, entries.meaning,
                 extra_info.dialect, extra_info.misc
         FROM entries
-        JOIN kanji ON entries.id = kanji.entry_id
         JOIN extra_info ON entries.id = extra_info.entry_id
-        WHERE kanji.kanji = ?
-    """,('遊ぶ',))
+        LEFT JOIN kanji ON entries.id = kanji.entry_id
+        WHERE kanji.kanji = ? OR entries.reading LIKE ?
+    """,(word,f'%{word}%'))
 
-    definitions = []
-    
-    for i in cursor.fetchall:
-        definitions.append(i)
+    definitions =  cursor_dict.fetchone()
 
-    conn.close()
     return definitions
 
-# establish a connection to the db using sqlite
-conn = sqlite3.connect(vocab_path)
-cursor = conn.cursor()
-
+# grab kindle vocab
 # take your sensitive ass back to PYTHON we SQL in this bitch!!!!!!!!!!!!
-cursor.execute("""
+cursor_kindle.execute("""
     SELECT WORDS.word, LOOKUPS.usage
     FROM WORDS
     JOIN LOOKUPS ON WORDS.id = LOOKUPS.word_key
-    LIMIT 20;
+    LIMIT 15;
 """)
-test = cursor.fetchall()
 
-conn.close()
+test = cursor_kindle.fetchall()
 
-print("HEEEEEEEEELP!!!!!!!")
+print("--------- TEST VOCABULARY LIST FROM KINDLE WITH DEFINITIONS FROM JMDICT: ---------------")
 for item in test:
     print(item)
 
+# grab definitions
+print("--------- DEFINITIONS FROM JMDICT DATABSE: ---------------")
 for stem, usage in test:
-    print(get_jisho_def(stem))
+    print(f"Word: {stem}")
+    print(f"Definition: {kanji_def(stem)}")
+    print(f"Usage/sentence: {usage}")
+    print('\n')
+
+# close open connections 
+cursor_dict.close()
+conn_kindle.close()
+conn_dict.close()

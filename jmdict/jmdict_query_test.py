@@ -12,6 +12,10 @@ cursor.execute("""
     WHERE kanji.kanji = ?
 """,('遊ぶ',))
 
+cursor.execute("""
+    SELECT * FROM entries WHERE reading LIKE '%そわそわ%';
+""")
+
 print(cursor.fetchall())
 
 conn.close()

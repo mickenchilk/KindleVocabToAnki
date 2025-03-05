@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 
 # make tree out of xml dictionary
 # we making a datbase because this file is huge and i need to look up like 1000 words each time
-tree = ET.parse("JMDict.xml")
+tree = ET.parse("./jmdict/JMDict.xml")
 root = tree.getroot()
 
 # establish a connection to the (currently) empty databse
